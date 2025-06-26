@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema(
   {
@@ -27,7 +29,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minLength: 6,
-      maxLength: 25,
       validate(value) {
         if (!validator.isStrongPassword(value))
           throw new Error('Weak password detected');
@@ -63,6 +64,18 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.methods.getJWT = function () {
+  const user = this;
+  const token = jwt.sign({_id : user._id}, 'keyisscret');
+  return token;
+};
+
+userSchema.methods.validatePassword = async function (passwordByUser) {
+  const user = this;
+  const isPasswordCorrect = await bcrypt.compare(passwordByUser, user.password);
+  return isPasswordCorrect;
+};
 
 const UserModel = mongoose.model('User', userSchema);
 

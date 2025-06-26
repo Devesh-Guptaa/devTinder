@@ -2,35 +2,49 @@ const express = require('express');
 const { connectDb } = require('./config/database');
 const { UserModel } = require('./models/user');
 const { default: mongoose } = require('mongoose');
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const { validateUserData } = require('./util/validateSignup');
+const { userAuth } = require('./middlewares/userAuth');
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
-app.post('/signin', async (req, res) => {
-  const user = req.body;
-  console.log(user);
+app.post('/signup', async (req, res) => {
+  console.log(req.body);
 
-  const ALLOWED_FIELD = [
-    'firstName',
-    'lastName',
-    'emailId',
-    'password',
-    'age',
-    'gender',
-    'photoUrl',
-    'about',
-    'skills',
-  ];
   try {
-    const isAllowed = Object.keys(user).every((key) =>
-      ALLOWED_FIELD.includes(key)
-    );
-    if (!isAllowed) throw new Error('Input fields not allowed');
-    if (user?.skills?.length > 10)
-      throw new Error('Skills cannot be more than 10');
+    validateUserData(req);
 
-    const User = new UserModel(user);
+    const {
+      firstName,
+      lastName,
+      emailId,
+      password,
+      age,
+      gender,
+      photoUrl,
+      about,
+      skills,
+    } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    const User = new UserModel({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+      age,
+      gender,
+      photoUrl,
+      about,
+      skills,
+    });
     await User.save()
       .then(() => {
         console.log('Successfully registered new user');
@@ -45,68 +59,33 @@ app.post('/signin', async (req, res) => {
   }
 });
 
-app.get('/user', async (req, res) => {
-  const userEmailId = req.body.emailId;
+app.post('/login', async (req, res) => {
+  const { emailId, password } = req.body;
 
   try {
-    const user = await UserModel.find({ emailId: userEmailId });
-    console.log(user);
+    if (!emailId || !password) throw new Error('Invalid credentials');
 
-    if (user) res.send(user);
-    else res.status(404).send('user not found');
+    const user = await UserModel.findOne({ emailId });
+    if (!user) throw new Error('Invalid credentials');
+
+    const isValid = await user.validatePassword(password);
+    if (!isValid) throw new Error('Invalid credentials');
+
+    const token = user.getJWT();
+
+    res.cookie('token', token);
+    res.send(user);
   } catch (err) {
-    console.log('error : ', err.message);
-    res.status(400).send('Something went wrong');
+    res.status(400).send('ERROR : ' + err.message);
   }
 });
 
-app.get('/feed', async (req, res) => {
+app.get('/profile', userAuth, (req, res) => {
   try {
-    const users = await UserModel.find({});
-    console.log(users);
-
-    if (users.length) res.send(users);
-    else res.status(404).send('user not found');
+    const user = req.user;
+    res.send(user);
   } catch (err) {
-    console.log('error : ', err.message);
-    res.status(400).send('Something went wrong');
-  }
-});
-
-app.patch('/user', async (req, res) => {
-  const userEmailId = req.body.emailId;
-  const data = req.body;
-  const ALLOWED_FIELD = [
-    'firstName',
-    'lastName',
-    'password',
-    'gender',
-    'photoUrl',
-    'about',
-    'skills',
-  ];
-
-  try {
-    const isAllowed = Object.keys(data).forEach((key) =>
-      ALLOWED_FIELD.includes(key)
-    );
-    if (!isAllowed) throw new Error('Input filels not allowed to be updated');
-    if (user?.skills.length > 10)
-      throw new Error('Skills cannot be more than 10');
-
-    const user = await UserModel.findOneAndUpdate(
-      { emailId: userEmailId },
-      data,
-      {
-        returnDocument: 'after',
-        runValidators: true,
-      }
-    );
-    console.log(user);
-    if (!user) res.status(400).send('User not found');
-    else res.send('user successfully updated');
-  } catch (err) {
-    res.status(400).send('Failed to update user');
+    res.status(400).send(err);
   }
 });
 
