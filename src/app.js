@@ -2,16 +2,17 @@ const express = require('express');
 const { connectDb } = require('./config/database');
 const { default: mongoose } = require('mongoose');
 const cookieParser = require('cookie-parser');
-const { authRoute } = require('./routes/auth');
-const { profileRoute } = require('./routes/profile');
-const { requestRoute } = require('./routes/request');
+const { authRouter } = require('./routes/auth');
+const { profileRouter } = require('./routes/profile');
+const { requestRouter } = require('./routes/request');
+const { userRouter } = require('./routes/user');
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.use('/', authRoute, profileRoute, requestRoute);
+app.use('/', authRouter, profileRouter, requestRouter, userRouter);
 
 connectDb()
   .then(async () => {
