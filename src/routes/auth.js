@@ -40,7 +40,9 @@ authRouter.post('/signup', async (req, res) => {
     await User.save()
       .then(() => {
         console.log('Successfully registered new user');
-        res.send('User registered');
+        const token = User.getJWT();
+
+        res.cookie('token', token).send(User);
       })
       .catch((err) => {
         console.log('error : ', err.message);
@@ -65,8 +67,7 @@ authRouter.post('/login', async (req, res) => {
 
     const token = user.getJWT();
 
-    res.cookie('token', token);
-    res.send(user);
+    res.cookie('token', token).send(user);
   } catch (err) {
     res.status(400).send('ERROR : ' + err.message);
   }

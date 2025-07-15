@@ -73,7 +73,7 @@ userRouter.get('/user/feed', userAuth, async (req, res) => {
     }).select(['fromUserId', 'toUserId']);
     let hiddenUsersFromFeed = new Set();
 
-    requests.every((row) => {
+    requests.forEach((row) => {
       hiddenUsersFromFeed.add(row.fromUserId);
       hiddenUsersFromFeed.add(row.toUserId);
     });
