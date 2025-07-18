@@ -1,3 +1,4 @@
+const dotenv = require('dotenv').config({ quiet: true });
 const express = require('express');
 const { connectDb } = require('./config/database');
 const { default: mongoose } = require('mongoose');
@@ -16,6 +17,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 

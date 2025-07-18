@@ -1,5 +1,4 @@
-const URL =
-  'mongodb+srv://deveshgupta231:ELz5TRXXrGMq9XFn@cluster0.1bxbjeo.mongodb.net/devTinder';
+const URL = process.env.DATABASE_CONNECTION_URL;
 
 const mongoose = require('mongoose');
 

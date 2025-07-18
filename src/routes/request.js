@@ -2,7 +2,7 @@ const express = require('express');
 const { Connection } = require('../models/connectionRequest');
 const { userAuth } = require('../middlewares/userAuth');
 const { UserModel } = require('../models/user');
-
+const { sendEmail } = require('../util/sesSendEmail');
 const requestRouter = express.Router();
 
 requestRouter.post(
@@ -36,6 +36,8 @@ requestRouter.post(
         toUserId,
         status,
       });
+
+      const response = await sendEmail(toUser.firstName);
 
       await connection.save();
       res.json({

@@ -6,7 +6,7 @@ const userAuth = async (req, res, next) => {
     const { token } = req.cookies;
     if (!token) throw new Error('Token not available');
 
-    const { _id } = jwt.verify(token, 'keyisscret');
+    const { _id } = jwt.verify(token, process.env.JWT_SECRET);
     if (!_id) throw new Error('Invalid token');
 
     const user = await UserModel.findById({ _id });
